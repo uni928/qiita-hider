@@ -522,6 +522,7 @@
 
   (async () => {
     let settings = await storageGet();
+    if (!settings.enabled || !settings.showPanel) return;
 
     const panel = mountPanel(settings, (s) => {
       settings = s;
@@ -544,3 +545,4 @@
     observer.observe(document.body, { childList: true, subtree: true });
   })();
 })();
+
