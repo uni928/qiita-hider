@@ -230,13 +230,16 @@ function aiHeuristicScore(title, bodyText, rawMdText) {
   function aiKeywordScore(text) {
     if (!text) return 0;
     const pats = [
+/——/i,
       /chatgpt/i,
       /\bgpt[-\s]?4\b/i,
       /\bgpt[-\s]?3\.?5\b/i,
       /\bopenai\b/i,
       /生成(ai|文章|記事)/i,
       /プロンプト/i,
+      /はじめに/i,
       /まとめ/i,
+      /おわりに/i,
       /下記(の)?(コード|内容)/i,
       /結論から/i,
       /要約すると/i,
@@ -248,6 +251,14 @@ function aiHeuristicScore(title, bodyText, rawMdText) {
     let s = 0;
     for (const p of pats) if (p.test(text)) s += 1;
     return s;
+  }
+
+  function aiKeywordScore2(text) {
+    if (!text) return 0;
+const rareCharMatches = text.match(/[【】「」『』《》〈〉〔〕［］｛｝〓※◆◇■□▼▽▲△]/g);
+const rareCharCount = rareCharMatches ? rareCharMatches.length : 0;
+
+return rareCharCount;
   }
 
   function templatePhraseScore(text) {
@@ -326,7 +337,9 @@ const ai = aiHeuristicScore(title, bodyText, rawMdText);
 
 const aiScore =
   aiKeywordScore(bodyText) +
-  aiKeywordScore(title) +
+  aiKeywordScore(title) -
+aiKeywordScore2(bodyText) - 
+aiKeywordScore2(title) +
   ai.score +
   remainAst(rawMdText);
     const templateScore = templatePhraseScore(bodyText);
