@@ -150,6 +150,86 @@
     return m ? m.length : 0;
   }
 
+function countEmojiLineStarts(text) {
+  if (!text) return 0;
+  const lines = text.split(/\r?\n/);
+  let c = 0;
+  for (const line of lines) {
+    const s = line.trimStart();
+    if (!s) continue;
+    // 行頭が絵文字（サロゲート/記号含む広めの範囲）
+    if (/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(s)) c++;
+  }
+  return c;
+}
+
+function remainAst(text) {
+  if(0 <= text.indexOf("**")) {
+    return 10;
+  }
+  return 0;
+}
+
+function aiHeuristicScore(title, bodyText, rawMdText) {
+  const t = (title || "");
+  const b = (bodyText || "");
+  const raw = (rawMdText || b);
+
+  // 1) 露骨な自己申告・生成ログっぽい言い回し
+  const strongPats = [
+    /chatgpt|openai|gpt[-\s]?\d/i,
+    /(ai|人工知能).{0,6}(生成|出力)/i,
+    /(以下|下記).{0,6}(の)?(コード|全文|結果|出力)/i,
+    /プロンプト/i,
+    /as an ai language model/i
+  ];
+
+  // 2) ChatGPTに多い文章構造・定型
+  const stylePats = [
+    /結論(から|として)/,
+    /要点(は|を)/,
+    /(ポイント|まとめ)(は|ると)/,
+    /(手順|ステップ)\s*\d+/,
+    /(メリット|デメリット)/,
+    /(注意点|補足|前提)/,
+    /(まず|次に|最後に)/,
+    /FAQ|よくある質問/i
+  ];
+
+  // 3) 箇条書き・見出し・セクション過多
+  const headingCount = (raw.match(/^\s{0,3}#{2,6}\s+/gm) || []).length;
+  const bulletCount = (raw.match(/^\s*[-*+]\s+/gm) || []).length;
+  const numberedCount = (raw.match(/^\s*\d+\.\s+/gm) || []).length;
+
+  // 4) 行頭絵文字ルール（5行以上でAI判定に寄せる）
+  const emojiLineStarts = countEmojiLineStarts(raw);
+
+  // 5) 句読点・整形の均質さ（雑スコア）
+  const len = Math.max(1, [...b].length);
+  const commaLike = (b.match(/[、，,]/g) || []).length;
+  const periodLike = (b.match(/[。．.]/g) || []).length;
+  const punctuationRatio = (commaLike + periodLike) / len;
+
+  let score = 0;
+
+  for (const p of strongPats) if (p.test(t) || p.test(b)) score += 3;
+  for (const p of stylePats) if (p.test(b)) score += 1;
+
+  if (headingCount >= 8) score += 2;
+  else if (headingCount >= 4) score += 1;
+
+  if (bulletCount + numberedCount >= 18) score += 2;
+  else if (bulletCount + numberedCount >= 10) score += 1;
+
+  if (punctuationRatio >= 0.06) score += 1; // 過度に均一に整形されがち
+  if (/```/.test(raw) && /^(?:\s*```[\s\S]*?```)\s*$/m.test(raw.trim())) score += 2; // コード塊＋説明薄め
+
+  // 行頭絵文字5行以上 → 強めにAI寄せ
+  if (emojiLineStarts >= 5) score += 4;
+
+  return { score, emojiLineStarts, headingCount, bulletCount, numberedCount };
+}
+
   function aiKeywordScore(text) {
     if (!text) return 0;
     const pats = [
@@ -159,6 +239,7 @@
       /\bopenai\b/i,
       /生成(ai|文章|記事)/i,
       /プロンプト/i,
+      /まとめ/i,
       /下記(の)?(コード|内容)/i,
       /結論から/i,
       /要約すると/i,
@@ -244,7 +325,7 @@
 
     const isCodeOnly = paragraphTextLen === 0 && (codeBlockCount > 0 || inlineCodeCount > 10);
 
-    const aiScore = aiKeywordScore(bodyText) + aiKeywordScore(title);
+    const aiScore = aiKeywordScore(bodyText) + aiKeywordScore(title) + countEmojiLineStarts(bodyText) + aiHeuristicScore(bodyText) + remainAst(bodyText);
     const templateScore = templatePhraseScore(bodyText);
 
     const infoDensity = (() => {
@@ -274,7 +355,7 @@
     if (!s.enabled) return false;
 
     if (s.hideHasAiKeywords) {
-      if (metrics.aiScore >= 2) return true;
+      if (metrics.aiScore >= 3) return true;
     }
     if (s.hideNoImage && metrics.hasImg === false) return true;
     if (s.hideShortTitle30 && metrics.titleLen <= (s.titleMaxLen | 0)) return true;
@@ -522,7 +603,7 @@
 
   (async () => {
     let settings = await storageGet();
-    if (!settings.enabled || !settings.showPanel) return;
+if (!settings.enabled || !settings.showPanel) return;
 
     const panel = mountPanel(settings, (s) => {
       settings = s;
@@ -545,4 +626,3 @@
     observer.observe(document.body, { childList: true, subtree: true });
   })();
 })();
-
