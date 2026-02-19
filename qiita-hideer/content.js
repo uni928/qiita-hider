@@ -380,7 +380,7 @@ const ai = aiHeuristicScore(title, bodyText, rawMdText);
 const aiScore =
   aiKeywordScore(bodyText) +
   aiKeywordScore(title) -
-//aiKeywordScore2(bodyText) - 
+aiKeywordScore2(bodyText) - 
 aiKeywordScore2(title) -
 aiKeywordScore3(bodyText) -
 aiKeywordScore3(title) + 
