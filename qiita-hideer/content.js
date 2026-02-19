@@ -164,10 +164,7 @@ function countEmojiLineStarts(text) {
 }
 
 function remainAst(text) {
-  if(0 <= text.indexOf("**")) {
-    return 10;
-  }
-  return 0;
+  return (text && text.includes("**")) ? 10 : 0;
 }
 
 function aiHeuristicScore(title, bodyText, rawMdText) {
@@ -324,8 +321,14 @@ function aiHeuristicScore(title, bodyText, rawMdText) {
     })();
 
     const isCodeOnly = paragraphTextLen === 0 && (codeBlockCount > 0 || inlineCodeCount > 10);
+const rawMdText = md.innerText || md.textContent || "";
+const ai = aiHeuristicScore(title, bodyText, rawMdText);
 
-    const aiScore = aiKeywordScore(bodyText) + aiKeywordScore(title) + countEmojiLineStarts(bodyText) + aiHeuristicScore(bodyText) + remainAst(bodyText);
+const aiScore =
+  aiKeywordScore(bodyText) +
+  aiKeywordScore(title) +
+  ai.score +
+  remainAst(rawMdText);
     const templateScore = templatePhraseScore(bodyText);
 
     const infoDensity = (() => {
@@ -601,28 +604,50 @@ function aiHeuristicScore(title, bodyText, rawMdText) {
     });
   }
 
-  (async () => {
-    let settings = await storageGet();
-if (!settings.enabled || !settings.showPanel) return;
+(async () => {
+  let settings = await storageGet();
 
-    const panel = mountPanel(settings, (s) => {
-      settings = s;
-      scan(settings, true);
-    });
+  // ここは「拡張自体の有効/無効」だけを見る
+  if (!settings.enabled) return;
 
-    panel.set(settings);
+  // パネルは showPanel のときだけ作る（showPanel=false なら null）
+  const panel = settings.showPanel
+    ? mountPanel(settings, (s) => {
+        settings = s;
+        // 設定変更で再スキャン（フィルタは常に動く）
+        scan(settings, true);
+      })
+    : null;
+
+  // パネルがある時だけ初期反映
+  if (panel) panel.set(settings);
+
+  // 初回スキャン（パネルOFFでも実行）
+  scan(settings);
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "sync") return;
+    if (!changes[STORAGE_KEY]) return;
+
+    const v = changes[STORAGE_KEY].newValue;
+    settings = { ...DEFAULTS, ...(v && typeof v === "object" ? v : {}) };
+
+    // 有効/無効が切られたら「以後は動かさない」方針なら return で止める
+    // （止めずに scan だけ抑止するなら、shouldHide 内で enabled を見る方でもOK）
+    if (!settings.enabled) return;
+
+    // パネルがある時だけ反映
+    if (panel) panel.set(settings);
+
+    // パネルOFFでも設定変更を反映するため再スキャン
+    scan(settings, true);
+  });
+
+  const observer = new MutationObserver(() => {
+    // enabled=false のときは何もしない
+    if (!settings.enabled) return;
     scan(settings);
-
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== "sync") return;
-      if (!changes[STORAGE_KEY]) return;
-      const v = changes[STORAGE_KEY].newValue;
-      settings = { ...DEFAULTS, ...(v && typeof v === "object" ? v : {}) };
-      panel.set(settings);
-      scan(settings, true);
-    });
-
-    const observer = new MutationObserver(() => scan(settings));
-    observer.observe(document.body, { childList: true, subtree: true });
-  })();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+})();
 })();
