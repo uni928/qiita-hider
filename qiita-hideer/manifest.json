@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Qiita 記事削減フィルタ",
+  "version": "1.0.0",
+  "description": "Qiitaの一覧記事を条件指定で非表示にします（チェックボックスで条件指定）。",
+  "permissions": ["storage"],
+  "host_permissions": ["https://qiita.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://qiita.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+"background": { "service_worker": "background.js" },
+  "options_page": "options.html"
+}

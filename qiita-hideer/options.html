@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Qiita 記事削減フィルタ 設定</title>
+  <style>
+    body{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:20px;color:#222;}
+    .card{border:1px solid #ddd;border-radius:14px;max-width:860px;padding:18px;box-shadow:0 6px 24px rgba(0,0,0,.06);}
+    h1{font-size:18px;margin:0 0 12px;}
+    h2{font-size:14px;margin:18px 0 8px;color:#444;}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+    .row:last-child{border-bottom:0;}
+    label{display:flex;gap:10px;align-items:center;}
+    input[type="number"]{width:120px;padding:6px 8px;border:1px solid #ddd;border-radius:10px;}
+    .btns{display:flex;gap:10px;align-items:center;margin-top:14px;}
+    button{border:1px solid #ddd;background:#f7f7f7;border-radius:12px;padding:8px 12px;cursor:pointer;}
+    button:active{transform:translateY(1px);}
+    .muted{color:#666;font-size:12px;margin-top:8px;}
+    .ok{color:#0a7f2e;font-size:12px;margin-left:8px;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Qiita 記事削減フィルタ 設定</h1>
+    <div class="row">
+      <label><input id="enabled" type="checkbox" /> 有効</label>
+<label style="margin-left:12px;"><input id="showPanel" type="checkbox" /> パネルを表示</label>
+      <div><button id="save">保存</button><span id="saved" class="ok" hidden>保存しました</span></div>
+    </div>
+
+    <h2>チェックで「該当記事を非表示」</h2>
+    <div id="checks"></div>
+
+    <h2>しきい値</h2>
+    <div id="nums"></div>
+
+    <div class="btns">
+      <button id="reset">初期化</button>
+    </div>
+
+    <div class="muted">
+      ※「ChatGPTで生成した可能性の高い記事」は、現コードの挙動を名称変更したものです。
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
