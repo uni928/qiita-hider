@@ -164,7 +164,7 @@ function countEmojiLineStarts(text) {
 }
 
 function remainAst(text) {
-  return (text && text.includes("**")) ? 10 : 0;
+  return (text && text.includes("**")) ? 100 : 0;
 }
 
 function aiHeuristicScore(title, bodyText, rawMdText) {
@@ -249,17 +249,59 @@ function aiHeuristicScore(title, bodyText, rawMdText) {
       /##\s|\n##\s|###\s/i
     ];
     let s = 0;
-    for (const p of pats) if (p.test(text)) s += 1;
+    for (const p of pats) if (p.test(text)) s += 2;
     return s;
   }
 
   function aiKeywordScore2(text) {
     if (!text) return 0;
-const rareCharMatches = text.match(/[【】「」『』《》〈〉〔〕［］｛｝〓※◆◇■□▼▽▲△]/g);
+const rareCharMatches = text.match(/[【】「」『』《》〈〉〔〕［］｛｝〓◆◇]/g);
 const rareCharCount = rareCharMatches ? rareCharMatches.length : 0;
 
-return rareCharCount;
+return rareCharCount * 2;
   }
+
+function aiKeywordScore3(title) {
+  if (!title) return 0;
+
+  const pats = [
+    /してみた/i,
+    /してみる/i,
+    /試してみた/i,
+    /書いてみた/i,
+    /作ってみた/i,
+    /やってみた/i,
+    /触ってみた/i,
+    /調べてみた/i,
+
+    /感想/i,
+    /雑感/i,
+    /備忘録/i,
+    /メモ/i,
+    /日記/i,
+    /覚え書き/i,
+
+    /なんとなく/i,
+    /とりあえず/i,
+    /多分/i,
+    /ざっくり/i,
+
+    /自分用/i,
+    /個人用/i,
+    /自分向け/i,
+    /私用/i,
+    /俺用/i
+  ];
+
+  let score = 0;
+
+  for (const p of pats) {
+    if (p.test(title)) score += 3;
+  }
+
+  return score;
+}
+
 
   function templatePhraseScore(text) {
     if (!text) return 0;
@@ -338,10 +380,12 @@ const ai = aiHeuristicScore(title, bodyText, rawMdText);
 const aiScore =
   aiKeywordScore(bodyText) +
   aiKeywordScore(title) -
-aiKeywordScore2(bodyText) - 
-aiKeywordScore2(title) +
+//aiKeywordScore2(bodyText) - 
+aiKeywordScore2(title) -
+aiKeywordScore3(title) + 
   ai.score +
   remainAst(rawMdText);
+//console.log(aiScore);
     const templateScore = templatePhraseScore(bodyText);
 
     const infoDensity = (() => {
@@ -371,7 +415,7 @@ aiKeywordScore2(title) +
     if (!s.enabled) return false;
 
     if (s.hideHasAiKeywords) {
-      if (metrics.aiScore >= 7) return true;
+      if (metrics.aiScore >= 12) return true;
     }
     if (s.hideNoImage && metrics.hasImg === false) return true;
     if (s.hideShortTitle30 && metrics.titleLen <= (s.titleMaxLen | 0)) return true;
