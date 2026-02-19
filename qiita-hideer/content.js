@@ -255,10 +255,10 @@ function aiHeuristicScore(title, bodyText, rawMdText) {
 
   function aiKeywordScore2(text) {
     if (!text) return 0;
-const rareCharMatches = text.match(/[【】『』《》〈〉〔〕［］｛｝〓◆◇]/g);
+const rareCharMatches = text.match(/[【】『』《》〈〉〔〕［］｛｝〓]/g);
 const rareCharCount = rareCharMatches ? rareCharMatches.length : 0;
 
-return rareCharCount * 5;
+return rareCharCount;
   }
 
 function aiKeywordScore3(title) {
@@ -266,7 +266,6 @@ function aiKeywordScore3(title) {
 
   const pats = [
     /してみた/i,
-    /してみる/i,
     /試してみた/i,
     /書いてみた/i,
     /作ってみた/i,
@@ -274,17 +273,14 @@ function aiKeywordScore3(title) {
     /触ってみた/i,
     /調べてみた/i,
 
-    /感想/i,
     /雑感/i,
     /備忘録/i,
-    /メモ/i,
     /日記/i,
     /覚え書き/i,
 
     /なんとなく/i,
     /とりあえず/i,
     /多分/i,
-    /ざっくり/i,
 
     /自分用/i,
     /個人用/i,
@@ -300,6 +296,25 @@ function aiKeywordScore3(title) {
   }
 
   return score;
+}
+
+function longLineDensityScore(text) {
+  if (!text) return 0;
+
+  const charCount = [...text].length;
+  let newlineCount = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === " ") newlineCount++;
+  }
+
+  if (newlineCount < 10) return 0;
+
+  // 文章量が「改行数 × 40」以上なら加点
+  if (charCount >= newlineCount * 40) {
+    return 20; // 加点量（必要に応じて調整）
+  }
+
+  return 0;
 }
 
 
@@ -383,7 +398,8 @@ const aiScore =
 aiKeywordScore2(bodyText) - 
 aiKeywordScore2(title) -
 aiKeywordScore3(bodyText) -
-aiKeywordScore3(title) + 
+aiKeywordScore3(title) +
+longLineDensityScore(bodyText) + 
   ai.score +
   remainAst(rawMdText);
 console.log(aiScore);
