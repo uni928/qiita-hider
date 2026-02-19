@@ -599,10 +599,24 @@ console.log(aiScore);
   }
   const queue = [];
   let active = 0;
-  function enqueue(task) {
-    queue.push(task);
-    pump();
-  }
+const MIN_FETCH_INTERVAL_MS = 500;
+let lastFetchStartedAt = 0;
+
+function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// enqueue の中で「実行前に500ms間隔を保証」する
+function enqueue(task) {
+  queue.push(async () => {
+    const now = Date.now();
+    const wait = Math.max(0, lastFetchStartedAt + MIN_FETCH_INTERVAL_MS - now);
+    if (wait) await delay(wait);
+    lastFetchStartedAt = Date.now();
+    return task();
+  });
+  pump();
+}
   function pump() {
     while (active < MAX_CONCURRENT_FETCH && queue.length) {
       const task = queue.shift();
