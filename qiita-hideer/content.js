@@ -258,7 +258,7 @@ function aiHeuristicScore(title, bodyText, rawMdText) {
 const rareCharMatches = text.match(/[【】「」『』《》〈〉〔〕［］｛｝〓◆◇]/g);
 const rareCharCount = rareCharMatches ? rareCharMatches.length : 0;
 
-return rareCharCount * 2;
+return rareCharCount * 5;
   }
 
 function aiKeywordScore3(title) {
@@ -296,7 +296,7 @@ function aiKeywordScore3(title) {
   let score = 0;
 
   for (const p of pats) {
-    if (p.test(title)) score += 3;
+    if (p.test(title)) score += 8;
   }
 
   return score;
