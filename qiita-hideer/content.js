@@ -255,7 +255,7 @@ function aiHeuristicScore(title, bodyText, rawMdText) {
 
   function aiKeywordScore2(text) {
     if (!text) return 0;
-const rareCharMatches = text.match(/[【】「」『』《》〈〉〔〕［］｛｝〓◆◇]/g);
+const rareCharMatches = text.match(/[【】『』《》〈〉〔〕［］｛｝〓◆◇]/g);
 const rareCharCount = rareCharMatches ? rareCharMatches.length : 0;
 
 return rareCharCount * 5;
@@ -382,10 +382,11 @@ const aiScore =
   aiKeywordScore(title) -
 //aiKeywordScore2(bodyText) - 
 aiKeywordScore2(title) -
+aiKeywordScore3(bodyText) -
 aiKeywordScore3(title) + 
   ai.score +
   remainAst(rawMdText);
-//console.log(aiScore);
+console.log(aiScore);
     const templateScore = templatePhraseScore(bodyText);
 
     const infoDensity = (() => {
