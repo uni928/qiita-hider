@@ -358,7 +358,7 @@ const aiScore =
     if (!s.enabled) return false;
 
     if (s.hideHasAiKeywords) {
-      if (metrics.aiScore >= 3) return true;
+      if (metrics.aiScore >= 7) return true;
     }
     if (s.hideNoImage && metrics.hasImg === false) return true;
     if (s.hideShortTitle30 && metrics.titleLen <= (s.titleMaxLen | 0)) return true;
